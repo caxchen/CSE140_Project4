@@ -10,10 +10,11 @@ class TestAgent(CaptureAgent):
 
     def __init__(self, index, isRed, **kwargs):
         super().__init__(index, **kwargs)
-        self.isPacman = False
+        self.isPacman = True
         self.isRed = isRed
 
         print(index)
+
     def registerInitialState(self, gameState):
         """
         This method handles the initial setup of the agent and populates useful fields,
@@ -22,7 +23,7 @@ class TestAgent(CaptureAgent):
         """
         super().registerInitialState(gameState)
 
-        # Your initialization code goes here, if you need any.
+        # Your initialization code goes here, if you need any. only runs at beginning
 
     def chooseAction(self, gameState):
         """
@@ -31,7 +32,8 @@ class TestAgent(CaptureAgent):
         # currentObservation=self.getCurrentObservation()
         # agentstate=currentObservation.getAgentState(0)
         # print(agentstate.getPosition())
-        if self.isPacman :
+        # isPacman
+        if self.isPacman:
             return self.chooseAction_Pacman(gameState)
         else:
             return self.chooseAction_Ghost(gameState)
@@ -39,13 +41,14 @@ class TestAgent(CaptureAgent):
     def chooseAction_Pacman(self, gameState):
         actions = gameState.getLegalActions(self.index)
         return random.choice(actions)
+
     def chooseAction_Ghost(self, gameState):
         actions = gameState.getLegalActions(self.index)
         return random.choice(actions)
 
 def createTeam(firstIndex, secondIndex, isRed,
-        #first = 'pacai.agents.capture.dummy.DummyAgent',
-        #second = 'pacai.agents.capture.dummy.DummyAgent'):
+        # first = 'pacai.agents.capture.dummy.DummyAgent',
+        # second = 'pacai.agents.capture.dummy.DummyAgent'):
         first = 'pacai.agents.capture.offense.OffensiveReflexAgent',
         second = 'pacai.agents.capture.defense.DefensiveReflexAgent'):
     """
@@ -54,14 +57,15 @@ def createTeam(firstIndex, secondIndex, isRed,
     isRed is True if the red team is being created,
     and will be False if the blue team is being created.
     """
-    print("color",isRed)
-    #firstAgent = TestAgent(firstIndex,isRed)
-    #secondAgent = TestAgent(secondIndex,isRed)
-    firstAgent = reflection.qualifiedImport(first)
+    print("color", isRed)
+    firstAgent = TestAgent(firstIndex, isRed)
+    # secondAgent = TestAgent(secondIndex, isRed)
+    # firstAgent = reflection.qualifiedImport(first)
     secondAgent = reflection.qualifiedImport(second)
 
-    #return [firstAgent, secondAgent]
+    # return [firstAgent, secondAgent]
     return [
-        firstAgent(firstIndex),
+        # firstAgent(firstIndex),
+        firstAgent,
         secondAgent(secondIndex),
     ]
