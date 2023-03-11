@@ -1,6 +1,36 @@
 from pacai.util import reflection
 from pacai.agents.capture.capture import CaptureAgent
+from pacai.core import distanceCalculator
 import random
+
+
+def createTeam(firstIndex, secondIndex, isRed,
+        # first = 'pacai.agents.capture.dummy.DummyAgent',
+        # second = 'pacai.agents.capture.dummy.DummyAgent'):
+        first = 'pacai.agents.capture.offense.OffensiveReflexAgent',
+        second = 'pacai.agents.capture.defense.DefensiveReflexAgent'):
+    """
+    This function should return a list of two agents that will form the capture team,
+    initialized using firstIndex and secondIndex as their agent indexed.
+    isRed is True if the red team is being created,
+    and will be False if the blue team is being created.
+    """
+    print("color", isRed)
+    firstAgent = CustomOffensiveAgent(firstIndex, isRed, secondIndex)
+    # secondAgent = TestAgent(secondIndex, isRed)
+    # firstAgent = reflection.qualifiedImport(first)
+    secondAgent = reflection.qualifiedImport(second)(secondIndex)
+
+    return [firstAgent, secondAgent]
+    """return [
+        firstAgent(firstIndex),
+        # firstAgent,
+        secondAgent(secondIndex),
+    ]"""
+
+# =====================================================
+# OFFENSIVE AGENT
+# =====================================================
 
 class CustomOffensiveAgent(CaptureAgent):
     """
@@ -8,11 +38,14 @@ class CustomOffensiveAgent(CaptureAgent):
     You should look at `pacai.core.baselineTeam` for more details about how to create an agent.
     """
 
-    def __init__(self, index, isRed, **kwargs):
+    def __init__(self, index, isRed, teammate, **kwargs):
         super().__init__(index, **kwargs)
         self.index = index
         self.isPacman = True
         self.isRed = isRed
+        self.teammate = teammate
+        self.distancer = None
+        self.alphaBetaDistance = 5
 
         # print(index)
 
@@ -25,33 +58,38 @@ class CustomOffensiveAgent(CaptureAgent):
         super().registerInitialState(gameState)
 
         # Your initialization code goes here, if you need any. only runs at beginning
+        self.distancer = distanceCalculator.Distancer(gameState.getInitialLayout())
 
     def chooseAction(self, gameState):
         """
-        Randomly pick an action.
+        [UNDER CONSTRUCTION]
+        Plan is to first detect distance to closest enemy with BFS.
+        If the closest enemy is within a certain distance, use alpha-beta minimax.
+        Otherwise, go for the closest food with BFS
         """
-        # currentObservation=self.getCurrentObservation()
-        # agentstate=currentObservation.getAgentState(0)
         
+        # Detect closest enemy
+        # First, get enemy positions
+        friendPositions = []
+        friendPositions.append(gameState.getAgentPosition(self.index))
+        friendPositions.append(gameState.getAgentPosition(self.teammate))
+        enemies = gameState.getAgentStates().copy()
+        for enemy in enemies:
+            if (enemy.getPosition() in friendPositions):
+                enemies.remove(enemy)
+        closestEnemy = (float('inf'), None)
+        for enemy in enemies:
+            dist = self.distancer.getDistance(gameState.getAgentPosition(self.index), enemy.getPosition())
+            if dist < closestEnemy[0]:
+                closestEnemy = (dist, enemy)
+        
+
         # so gets foods from the state.  then, makes it so all the foods
         # in friendly territory are false, so BFS won't go for them.
         # then, returns BFS action to closest food.
-        isPacman = gameState.getAgentState(self.index).isPacman()
-        foods = gameState.getFood()
-        length = foods.getWidth()
-        # first, falsify friendly foods
-        falsifyFrom = 0
-        falsifyTo = length
-        if (self.isRed):
-            falsifyTo = length/2
-        elif (not self.isRed):
-            falsifyFrom = length/2
-        for x in range(foods.getWidth()):
-            if (x >= falsifyFrom and x <= falsifyTo):
-                for y in range(foods.getHeight()):
-                    foods[x][y] = False
+        foods = self.getFood(gameState)
         # then, return BFS action to closest food.
-        if isPacman:
+        if gameState.getAgentState(self.index).isPacman():
             return self.BFSClosestFood(gameState, self.index, foods)
             # return self.chooseAction_Pacman(gameState)
         else:
@@ -103,29 +141,9 @@ class CustomOffensiveAgent(CaptureAgent):
                         # costs[neighbor] = costs[node]+1
         return "Stop"
 
-def createTeam(firstIndex, secondIndex, isRed,
-        # first = 'pacai.agents.capture.dummy.DummyAgent',
-        # second = 'pacai.agents.capture.dummy.DummyAgent'):
-        first = 'pacai.agents.capture.offense.OffensiveReflexAgent',
-        second = 'pacai.agents.capture.defense.DefensiveReflexAgent'):
-    """
-    This function should return a list of two agents that will form the capture team,
-    initialized using firstIndex and secondIndex as their agent indexed.
-    isRed is True if the red team is being created,
-    and will be False if the blue team is being created.
-    """
-    print("color", isRed)
-    firstAgent = CustomOffensiveAgent(firstIndex, isRed)
-    # secondAgent = TestAgent(secondIndex, isRed)
-    # firstAgent = reflection.qualifiedImport(first)
-    secondAgent = reflection.qualifiedImport(second)(secondIndex)
-
-    return [firstAgent, secondAgent]
-    """return [
-        firstAgent(firstIndex),
-        # firstAgent,
-        secondAgent(secondIndex),
-    ]"""
+# =====================================================
+# TEST AGENT
+# =====================================================
 
 # saved TestAgent code
 class TestAgent(CaptureAgent):
